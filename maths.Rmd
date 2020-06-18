@@ -1,0 +1,109 @@
+---
+title: "Fun Maths Stuff"
+output: html_notebook
+---
+
+This notebook is an ever-growing group of fun maths visualizations. Let's start with the Lorenz Butterfly.
+
+## Lorenz Butterfly
+
+First we need the Lorenz equations:
+
+$$\frac{dx}{dt} = \sigma(y-x)$$
+$$\frac{dy}{dt} = x(\rho-z)-y$$
+$$\frac{dz}{dt} = xy - \beta z$$
+Let's setup the parameters and initial state with the classic parameters ($\sigma=10$, $\rho=28$, $\beta=\frac{8}{3}$).
+```{r}
+parameters <- c(sigma = 10, rho = 28, beta = 8/3)
+state <- c(x = 1 , y = 1 , z = 1)
+```
+Now let's write a function to return the rates of change for a given time.
+
+```{r}
+Lorenz <- function(t, state, parameters) {
+  with(as.list(c(state, parameters)), {
+    dx <- sigma*(y-x)
+    dy <- x*(rho-z) - y
+    dz <- x*y - beta*z
+    
+    list(c(dx, dy, dz))
+  })
+}
+```
+
+We want to run the model for 100 days and give outputs at 0.01 daily intervals so we can create our times.
+
+```{r}
+times <- seq(0, 100, by = 0.01)
+```
+
+Now we can solve.
+
+```{r}
+library(deSolve)
+out <- as.data.frame(ode(y = state, times = times, func = Lorenz, parms = parameters, method = "euler"))
+head(out)
+```
+So we can plot this now.
+
+```{r}
+plot(out$x, out$z, pch=".")
+```
+Let's try a 3D plot,
+
+```{r}
+library(plotly)
+plot_ly(x = out$x, y = out$y, z = out$z, type = "scatter3d", mode = "markers", marker = list(size=1))
+```
+## Mandelbrot Set
+
+Let $z = 0$. The Mandelbrot set $M \subseteq \mathbb{C}$ is the set of numbers $c \in \mathbb{C}$ such that
+$$z_{n+1} = z_n^2 + c$$
+remains bounded for all $n \in \mathbb{N}.$
+
+It can be shown that if at any point $|z| > 2$ then $c \notin M$ as M is compact. Hence we only need to check for $|c| \leq 2$.
+
+```{r}
+n <- 150
+
+pixels <- matrix(nrow=0, ncol=2)
+for (i in -n:n) {
+  for (j in -n:n) {
+    x = (i/n) * 2
+    y = (j/n) * 2
+    pixels <- rbind(pixels, c(x, y))
+  }
+}
+
+
+A <- matrix(nrow=0, ncol=3)
+```
+
+Let $z_n = x_n + iy_n$ and $c = x_c +iy_c$. Then
+
+$$ x_{n+1} = Re(z_n^2 + c) = x_n^2 - y_n^2 + x_c $$
+and
+
+$$ y_{n+1} = Im(z_n^2 + c) = 2x_ny_n + y_c. $$
+
+
+```{r}
+max.iteration <- 1000
+for (i in 1:((2*n)+1)^2) {
+  x <- y <- 0
+  iteration <- 0
+  while (x^2 + y^2 <= 4 & iteration < 1000) {
+    xtemp <- x^2 - y^2 + pixels[i,1]
+    y <- 2*x*y + pixels[i,2]
+    x <- xtemp
+    iteration <- iteration + 1
+  }
+  A <- rbind(A, c(pixels[i,], iteration))
+}
+M <- A[A[,3] == max.iteration,]
+plot(M[,1], M[,2], pch=".", cex=2)
+```
+```{r}
+plot_ly(x = A[,1], y = A[,2], type = "scatter", mode = "markers", marker = list(size=3), color=A[,3])
+```
+
