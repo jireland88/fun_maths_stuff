@@ -1,6 +1,8 @@
 ---
 title: "Fun Maths Stuff"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 This notebook is an ever-growing group of fun maths visualizations. Let's start with the Lorenz Butterfly.
@@ -107,3 +109,33 @@ plot(M[,1], M[,2], pch=".", cex=2)
 plot_ly(x = A[,1], y = A[,2], type = "scatter", mode = "markers", marker = list(size=3), color=A[,3])
 ```
 
+## Bifurcation diagram
+
+Let's start with this equation called the logistic map
+
+$$x_{n+1} = rx(1-x)$$
+```{r}
+logistic.map <- function(r, x) {
+  return(r*x*(1-x))
+}
+
+n = 1000 # number of choices for r
+iterations = 1000 # number of times to apply the logistic map
+last = 100 # number of iterations to keep
+
+x_val = c()
+y_val = c()
+
+for (r in seq(2.5, 4, (4-2.5)/n)) {
+  x = 0.00001
+  for (i in 1:iterations) {
+    x = logistic.map(r, x)
+    if (i >= (iterations - last)) {
+        x_val = c(x_val, r)
+        y_val = c(y_val, x)
+    }
+  }
+}
+
+plot(x_val, y_val, pch=".", cex=1)
+```
